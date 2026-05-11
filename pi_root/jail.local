@@ -1,0 +1,37 @@
+# /etc/fail2ban/jail.local
+# kzltc | github.com/kzltc
+# solo 3 jails, con 2gb de ram no da para mas
+
+[DEFAULT]
+ignoreip = 127.0.0.1/8
+bantime = 300
+findtime = 60
+maxretry = 3
+backend = polling
+usedns = no
+enabled = false
+
+[nginx-dos]
+enabled = true
+port = http,https
+filter = nginx-dos
+logpath = /var/log/nginx/access.log
+maxretry = 80
+findtime = 60
+bantime = 600
+
+[nginx-botsearch]
+enabled = true
+port = http,https
+filter = nginx-botsearch
+logpath = /var/log/nginx/access.log
+maxretry = 2
+bantime = 600
+
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 3
+bantime = 300

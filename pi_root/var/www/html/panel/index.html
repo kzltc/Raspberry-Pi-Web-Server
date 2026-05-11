@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>panel</title>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#c9d1d9;--muted:#8b949e;--blue:#58a6ff;--red:#da3633;--green:#238636}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",monospace;padding:20px;max-width:900px;margin:0 auto}
+h1{font-size:16px;color:var(--blue);margin-bottom:20px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:14px}
+.card h2{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;font-weight:500}
+.card .val{font-size:26px;font-weight:700;color:#f0f6fc;line-height:1.2}
+.card .sub{font-size:11px;color:#484f58;margin-top:2px}
+.controls{margin:16px 0}
+.btn{border:0;border-radius:6px;padding:10px 22px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:active{opacity:.8}
+.btn-danger{background:var(--red);color:#fff}
+.btn-safe{background:var(--green);color:#fff}
+.attacks{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:12px;max-height:160px;overflow-y:auto}
+.attacks h2{font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase}
+.attacks p{font-size:11px;color:#6e7681;margin:2px 0;font-family:monospace;word-break:break-all}
+.footer{font-size:10px;color:#30363d;margin-top:12px;text-align:right}
+</style>
+</head>
+<body>
+<h1>· panel de control</h1>
+
+<div class="grid">
+  <div class="card">
+    <h2>RAM en uso</h2>
+    <div class="val" id="ram_used">--</div>
+    <div class="sub" id="ram_total">de -- MB</div>
+  </div>
+  <div class="card">
+    <h2>CPU</h2>
+    <div class="val" id="cpu">--</div>
+    <div class="sub">%</div>
+  </div>
+  <div class="card">
+    <h2>Disco libre</h2>
+    <div class="val" id="disk">--</div>
+    <div class="sub">GB</div>
+  </div>
+  <div class="card">
+    <h2>Conexiones</h2>
+    <div class="val" id="conn">--</div>
+    <div class="sub">activas</div>
+  </div>
+  <div class="card">
+    <h2>IPs baneadas</h2>
+    <div class="val" id="banned">--</div>
+    <div class="sub">ahora</div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-danger" id="defBtn" onclick="toggleDefense()">ACTIVAR DEFENSA</button>
+</div>
+
+<div class="attacks">
+  <h2>últimos bloqueos</h2>
+  <div id="attackList"><p>cargando...</p></div>
+</div>
+
+<div class="footer" id="status">actualizando...</div>
+
+<script>
+// token de api - cambialo por el tuyo
+const T = "CHANGE_ME";
+
+function GET(url){ return fetch(url,{headers:{"X-API-Token":T}}).then(r=>r.json()).catch(()=>null) }
+
+async function refresh(){
+  const s = await GET("/api/stats");
+  if(s){
+    document.getElementById("ram_used").textContent = s.ram_used + " MB";
+    document.getElementById("ram_total").textContent = "de " + s.ram_total + " MB";
+    document.getElementById("cpu").textContent = s.cpu;
+    document.getElementById("disk").textContent = s.disk_free + " / " + s.disk_total;
+  }
+
+  const c = await GET("/api/connections");
+  if(c) document.getElementById("conn").textContent = c.connections;
+
+  const b = await GET("/api/banned");
+  if(b) document.getElementById("banned").textContent = b.count;
+
+  const a = await GET("/api/attacks");
+  const al = document.getElementById("attackList");
+  if(a && a.last && a.last.length > 0){
+    al.innerHTML = a.last.map(l => "<p>" + l + "</p>").join("");
+  } else if(a) {
+    al.innerHTML = "<p>nada reportado</p>";
+  }
+
+  const d = await GET("/api/defense/status");
+  const btn = document.getElementById("defBtn");
+  if(d && d.active){
+    btn.textContent = "DESACTIVAR DEFENSA";
+    btn.className = "btn btn-safe";
+  } else {
+    btn.textContent = "ACTIVAR DEFENSA";
+    btn.className = "btn btn-danger";
+  }
+
+  document.getElementById("status").textContent = "refresh: " + new Date().toLocaleTimeString();
+}
+
+async function toggleDefense(){
+  await GET("/api/defense/toggle");
+  refresh();
+}
+
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

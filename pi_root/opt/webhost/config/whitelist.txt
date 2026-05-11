@@ -1,0 +1,2 @@
+# pon tus IPs aqui, una por linea 
+# ej: 83.45.123.67 
